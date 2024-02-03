@@ -1,9 +1,7 @@
 import re
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error
-import seaborn as sns
+import calendar
+
 
 
 def preprocess(data):
@@ -39,42 +37,37 @@ def preprocess(data):
     df['hour'] = df['date'].dt.hour
     df['minute'] = df['date'].dt.minute
     df['only_date'] = df['date'].dt.day
+    df['day_of_week'] = df['date'].dt.dayofweek
+    df['day_name'] = df['day_of_week'].apply(lambda x: calendar.day_name[x])
 
     # Create a new DataFrame to count messages per hour
-    message_by_hour = df.groupby(df['date'].dt.hour).size().reset_index(name='message_count')
+    message_by_hour = df.groupby(df['hour']).size().reset_index(name='message_count')
 
     # Merge the new DataFrame with your original DataFrame
-    df = df.merge(message_by_hour, left_on=df['date'].dt.hour,
-                  right_on=message_by_hour['date'], how='left')
+    df = df.merge(message_by_hour, left_on='hour', right_on='hour', how='left')
 
     # Filter the DataFrame to exclude the row with the specified name
     df = df[df['user'] != 'You joined a group via invite in the community']
+    df = df.dropna(subset=['messages'])
 
     # Reset the index of the filtered DataFrame
     df.reset_index(drop=True, inplace=True)
 
     if 'group_notification' in df['user'].values:
         df = df[df['user'] != 'group_notification']
-    #     df.reset_index(drop=True, inplace=True)
-    # else:
-    #     pass
+
+    most_active_hour_per_user = df.groupby(['user', 'hour']).size().reset_index(name='message_count')
+    idx = most_active_hour_per_user.groupby(['user'])['message_count'].transform(max) == most_active_hour_per_user[
+        'message_count']
+    most_active_hour_per_user = most_active_hour_per_user[idx]
+
+    # Create a separate DataFrame for most active hours per user
+    most_active_hour = most_active_hour_per_user[['user', 'hour']]
 
 
 
-    # Function for linear regression
-    def perform_linear_regression(df):
-        X = df[['hour']]
-        y = df['message_count']
+    # Merge the most active hour DataFrame with your original DataFrame
+    df = df.merge(most_active_hour, on='user', how='left', suffixes=('', '_most_active_hour'))
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    return df,message_by_hour,most_active_hour
 
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-
-        y_pred = model.predict(X_test)
-
-        mae = mean_absolute_error(y_test, y_pred)
-
-        return model, mae
-
-    return df
