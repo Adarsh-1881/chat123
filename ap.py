@@ -10,7 +10,12 @@ import altair as alt
 from textblob import TextBlob
 
 
+
+
+
 st.set_page_config(
+
+
     page_title="WhatsApp Chat Analyzer",
     page_icon="✨",
     layout="wide",
@@ -18,6 +23,37 @@ st.set_page_config(
 
 
 )
+# Custom CSS for changing sidebar background color
+custom_css = """
+    /* Change the background color of the sidebar */
+    div[data-testid="stSidebar"] {
+        background-color: #336699; /* Change this to your desired color */
+    }
+"""
+
+# Inject custom CSS
+st.markdown(f'<style>{custom_css}</style>', unsafe_allow_html=True)
+
+
+# Custom CSS
+custom_css = """
+    /* Add your custom styles here */
+    body {
+        background-color: #f0f0f0;
+        color: #333333;
+    }
+    h1 {
+        color: #0066cc;
+    }
+    h2 {
+        color: #009933;
+    }
+"""
+
+# Inject custom CSS
+st.markdown(f'<style>{custom_css}</style>', unsafe_allow_html=True)
+
+
 
 # about_content = """
 # <h1 style='color: black; text-shadow:4px 4px 4px white ;text-align: center;'>About The Website<br></h1>
